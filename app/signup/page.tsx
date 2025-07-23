@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Mail, Lock, User, GraduationCap, AlertCircle } from "lucide-react"
 import Link from "next/link"
-import { api } from "@/lib/api"
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -54,24 +53,45 @@ export default function SignUpPage() {
       // Create username from first and last name
       const username = (formData.firstName + formData.lastName).toLowerCase().replace(/\s+/g, "")
 
-      const response = await api.register({
+      console.log("Attempting registration with:", {
         username,
         email: formData.email,
-        password: formData.password,
         fullName: `${formData.firstName} ${formData.lastName}`,
         grade: formData.grade,
         school: formData.school,
       })
 
-      // Store token and user data
-      localStorage.setItem("token", response.token)
-      localStorage.setItem("user", JSON.stringify(response.user))
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          email: formData.email,
+          password: formData.password,
+          fullName: `${formData.firstName} ${formData.lastName}`,
+          grade: formData.grade,
+          school: formData.school,
+        }),
+      })
 
-      // Redirect to dashboard
-      window.location.href = "/dashboard"
+      const data = await response.json()
+      console.log("Registration response:", data)
+
+      if (response.ok) {
+        // Store token and user data
+        localStorage.setItem("token", data.token)
+        localStorage.setItem("user", JSON.stringify(data.user))
+
+        // Redirect to dashboard
+        window.location.href = "/dashboard"
+      } else {
+        setError(data.message || "Registration failed. Please try again.")
+      }
     } catch (error: any) {
       console.error("Registration error:", error)
-      setError(error.message || "Registration failed. Please try again.")
+      setError("Network error. Please check your connection and try again.")
     } finally {
       setIsLoading(false)
     }
