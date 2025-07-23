@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Mail, Lock, User, GraduationCap } from "lucide-react"
+import { ArrowLeft, Mail, Lock, User, GraduationCap, AlertCircle } from "lucide-react"
 import Link from "next/link"
+import { api } from "@/lib/api"
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -23,11 +23,58 @@ export default function SignUpPage() {
     school: "",
     agreeToTerms: false,
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle signup logic here
-    console.log("Signup data:", formData)
+    setError("")
+    setIsLoading(true)
+
+    // Validation
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords don't match!")
+      setIsLoading(false)
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long")
+      setIsLoading(false)
+      return
+    }
+
+    if (!formData.agreeToTerms) {
+      setError("Please agree to the terms and conditions")
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      // Create username from first and last name
+      const username = (formData.firstName + formData.lastName).toLowerCase().replace(/\s+/g, "")
+
+      const response = await api.register({
+        username,
+        email: formData.email,
+        password: formData.password,
+        fullName: `${formData.firstName} ${formData.lastName}`,
+        grade: formData.grade,
+        school: formData.school,
+      })
+
+      // Store token and user data
+      localStorage.setItem("token", response.token)
+      localStorage.setItem("user", JSON.stringify(response.user))
+
+      // Redirect to dashboard
+      window.location.href = "/dashboard"
+    } catch (error: any) {
+      console.error("Registration error:", error)
+      setError(error.message || "Registration failed. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -52,6 +99,13 @@ export default function SignUpPage() {
             <CardDescription>Start your competitive math journey today</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {error && (
+              <div className="flex items-center space-x-2 text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -65,6 +119,7 @@ export default function SignUpPage() {
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -79,6 +134,7 @@ export default function SignUpPage() {
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -96,6 +152,7 @@ export default function SignUpPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -112,6 +169,8 @@ export default function SignUpPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
+                    disabled={isLoading}
+                    minLength={6}
                   />
                 </div>
               </div>
@@ -128,6 +187,7 @@ export default function SignUpPage() {
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -135,7 +195,11 @@ export default function SignUpPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="grade">Grade Level</Label>
-                  <Select value={formData.grade} onValueChange={(value) => setFormData({ ...formData, grade: value })}>
+                  <Select
+                    value={formData.grade}
+                    onValueChange={(value) => setFormData({ ...formData, grade: value })}
+                    disabled={isLoading}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select grade" />
                     </SelectTrigger>
@@ -161,6 +225,7 @@ export default function SignUpPage() {
                       className="pl-10"
                       value={formData.school}
                       onChange={(e) => setFormData({ ...formData, school: e.target.value })}
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -171,6 +236,7 @@ export default function SignUpPage() {
                   id="terms"
                   checked={formData.agreeToTerms}
                   onCheckedChange={(checked) => setFormData({ ...formData, agreeToTerms: checked as boolean })}
+                  disabled={isLoading}
                 />
                 <Label htmlFor="terms" className="text-sm">
                   I agree to the{" "}
@@ -187,9 +253,9 @@ export default function SignUpPage() {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                disabled={!formData.agreeToTerms}
+                disabled={!formData.agreeToTerms || isLoading}
               >
-                Create Account
+                {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
 
