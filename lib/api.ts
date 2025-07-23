@@ -1,5 +1,3 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ""
-
 interface ApiResponse<T = any> {
   success: boolean
   data?: T
@@ -13,7 +11,7 @@ interface Trick {
   description: string
   category: string
   examTypes: string[]
-  difficulty: string
+  difficulty: "Easy" | "Medium" | "Hard"
   timeToLearn: number
   xpReward: number
   steps: Array<{
@@ -40,6 +38,9 @@ interface Trick {
     frequency: string
   }>
   tags: string[]
+  views: number
+  completions: number
+  averageRating: number
   createdAt: string
   updatedAt: string
 }
@@ -50,6 +51,7 @@ interface UserProgress {
   level: number
   totalXP: number
   currentXP: number
+  xpToNextLevel: number
   tricksCompleted: number
   totalTimeSpent: number
   averageScore: number
@@ -71,16 +73,10 @@ interface UserProgress {
     averageScore: number
     timeSpent: number
   }>
-  completedTricks: Array<{
-    trickId: string
-    completedAt: string
-    score: number
-    timeSpent: number
-  }>
-  achievements: Array<{
-    achievementId: string
-    unlockedAt: string
-  }>
+  dailyGoal: number
+  dailyProgress: number
+  weeklyGoal: number
+  weeklyProgress: number
 }
 
 interface Achievement {
@@ -98,8 +94,7 @@ interface Achievement {
   xpReward: number
   badgeColor: string
   rarity: string
-  order: number
-  unlockCount: number
+  totalUnlocks: number
 }
 
 interface DashboardStats {
@@ -107,17 +102,25 @@ interface DashboardStats {
   recentTricks: Trick[]
   recommendedTricks: Trick[]
   achievements: Achievement[]
+  unlockedAchievements: Achievement[]
   leaderboard: Array<{
     username: string
     level: number
     totalXP: number
+    tricksCompleted: number
   }>
 }
 
 class ApiClient {
+  private baseUrl: string
+
+  constructor() {
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || ""
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
-      const url = `${API_BASE_URL}${endpoint}`
+      const url = `${this.baseUrl}${endpoint}`
       const response = await fetch(url, {
         headers: {
           "Content-Type": "application/json",
@@ -139,27 +142,18 @@ class ApiClient {
     }
   }
 
-  // Authentication
-  async login(credentials: { email: string; password: string }): Promise<ApiResponse<{ user: any; token: string }>> {
-    return this.request("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    })
+  // Health check
+  async healthCheck(): Promise<ApiResponse> {
+    return this.request("/api/health")
   }
 
-  async register(userData: {
-    username: string
-    email: string
-    password: string
-  }): Promise<ApiResponse<{ user: any; token: string }>> {
-    return this.request("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify(userData),
-    })
+  // Seeding
+  async seedTricks(): Promise<ApiResponse> {
+    return this.request("/api/seed-tricks", { method: "POST" })
   }
 
-  async getProfile(): Promise<ApiResponse<any>> {
-    return this.request("/api/auth/me")
+  async autoSeed(): Promise<ApiResponse> {
+    return this.request("/api/auto-seed")
   }
 
   // Tricks
@@ -167,6 +161,7 @@ class ApiClient {
     category?: string
     examType?: string
     difficulty?: string
+    search?: string
     limit?: string
     page?: string
   }): Promise<ApiResponse<{ tricks: Trick[]; total: number; page: number; totalPages: number }>> {
@@ -187,8 +182,12 @@ class ApiClient {
 
   async completeTrick(
     id: string,
-    data: { score: number; timeSpent: number },
-  ): Promise<ApiResponse<{ xpGained: number; newAchievements: Achievement[] }>> {
+    data: {
+      timeSpent: number
+      score: number
+      answers: Record<string, string>
+    },
+  ): Promise<ApiResponse<{ xpEarned: number; levelUp: boolean; newAchievements: Achievement[] }>> {
     return this.request(`/api/tricks/${id}/complete`, {
       method: "POST",
       body: JSON.stringify(data),
@@ -196,8 +195,9 @@ class ApiClient {
   }
 
   // User Progress
-  async getUserProgress(): Promise<ApiResponse<UserProgress>> {
-    return this.request("/api/user/progress")
+  async getUserProgress(userId?: string): Promise<ApiResponse<UserProgress>> {
+    const endpoint = userId ? `/api/user/progress?userId=${userId}` : "/api/user/progress"
+    return this.request(endpoint)
   }
 
   async updateUserProgress(data: Partial<UserProgress>): Promise<ApiResponse<UserProgress>> {
@@ -217,42 +217,24 @@ class ApiClient {
     return this.request("/api/achievements")
   }
 
-  async getUserAchievements(): Promise<ApiResponse<Achievement[]>> {
-    return this.request("/api/user/achievements")
+  async getUserAchievements(userId?: string): Promise<ApiResponse<Achievement[]>> {
+    const endpoint = userId ? `/api/achievements/user?userId=${userId}` : "/api/achievements/user"
+    return this.request(endpoint)
   }
 
   // Leaderboard
-  async getLeaderboard(limit?: number): Promise<
+  async getLeaderboard(limit = 10): Promise<
     ApiResponse<
       Array<{
         username: string
         level: number
         totalXP: number
         tricksCompleted: number
+        currentStreak: number
       }>
     >
   > {
-    return this.request(`/api/leaderboard${limit ? `?limit=${limit}` : ""}`)
-  }
-
-  // Seeding and Health
-  async seedTricks(): Promise<ApiResponse<any>> {
-    return this.request("/api/seed-tricks", {
-      method: "POST",
-    })
-  }
-
-  async autoSeed(): Promise<ApiResponse<any>> {
-    return this.request("/api/auto-seed")
-  }
-
-  async healthCheck(): Promise<ApiResponse<{ status: string; database: string; timestamp: string }>> {
-    return this.request("/api/health")
-  }
-
-  // Search
-  async searchTricks(query: string): Promise<ApiResponse<Trick[]>> {
-    return this.request(`/api/search?q=${encodeURIComponent(query)}`)
+    return this.request(`/api/leaderboard?limit=${limit}`)
   }
 
   // Categories
@@ -260,11 +242,24 @@ class ApiClient {
     return this.request("/api/categories")
   }
 
-  // Exam Types
-  async getExamTypes(): Promise<ApiResponse<Array<{ name: string; count: number }>>> {
-    return this.request("/api/exam-types")
+  // Search
+  async searchTricks(query: string): Promise<ApiResponse<Trick[]>> {
+    return this.request(`/api/search?q=${encodeURIComponent(query)}`)
+  }
+
+  // Statistics
+  async getStats(): Promise<
+    ApiResponse<{
+      totalTricks: number
+      totalUsers: number
+      totalCompletions: number
+      popularCategories: Array<{ category: string; count: number }>
+      popularExamTypes: Array<{ examType: string; count: number }>
+    }>
+  > {
+    return this.request("/api/stats")
   }
 }
 
 export const api = new ApiClient()
-export type { Trick, UserProgress, Achievement, DashboardStats }
+export type { Trick, UserProgress, Achievement, DashboardStats, ApiResponse }
