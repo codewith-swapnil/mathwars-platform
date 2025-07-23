@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Trophy, Zap, Target, BookOpen, Users, TrendingUp, Award, Clock, Star, FlameIcon as Fire } from "lucide-react"
 import Link from "next/link"
+import { DashboardInit } from "@/components/dashboard-init"
 
 export default function DashboardPage() {
   const [user] = useState({
@@ -97,6 +98,9 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome back, {user.name}! 👋</h1>
           <p className="text-gray-600 dark:text-gray-300">Ready to tackle some challenging problems today?</p>
         </div>
+
+        {/* Dashboard Initialization */}
+        <DashboardInit />
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

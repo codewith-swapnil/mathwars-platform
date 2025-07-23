@@ -71,8 +71,21 @@ export const api = {
       body: JSON.stringify(solutionData),
     }),
 
-  // Health check
+  // Leaderboard endpoints
+  getLeaderboard: (params: Record<string, string> = {}) => {
+    const queryParams = new URLSearchParams(params)
+    return makeRequest(`/api/leaderboard?${queryParams}`)
+  },
+
+  // Tournament endpoints
+  getTournaments: () => makeRequest("/api/tournaments"),
+
+  // Achievement endpoints
+  getAchievements: () => makeRequest("/api/achievements"),
+
+  // Utility endpoints
   healthCheck: () => makeRequest("/api/health"),
+  seedProblems: () => makeRequest("/api/seed-problems", { method: "POST" }),
 }
 
 export default api
