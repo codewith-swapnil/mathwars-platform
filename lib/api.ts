@@ -50,42 +50,35 @@ export const api = {
 
   getCurrentUser: () => makeRequest("/api/auth/me"),
 
-  // Problems endpoints
-  getProblems: (filters: Record<string, string> = {}) => {
+  // Tricks endpoints
+  getTricks: (filters: Record<string, string> = {}) => {
     const params = new URLSearchParams(filters)
-    return makeRequest(`/api/problems?${params}`)
+    return makeRequest(`/api/tricks?${params}`)
   },
 
-  getProblem: (id: string) => makeRequest(`/api/problems/${id}`),
+  getTrick: (id: string) => makeRequest(`/api/tricks/${id}`),
 
-  submitSolution: (
-    problemId: string,
-    solutionData: {
-      solution: string
+  completeTrick: (
+    trickId: string,
+    progressData: {
       timeSpent: number
-      hintsUsed?: number
+      practiceScore?: number
     },
   ) =>
-    makeRequest(`/api/problems/${problemId}/submit`, {
+    makeRequest(`/api/tricks/${trickId}/complete`, {
       method: "POST",
-      body: JSON.stringify(solutionData),
+      body: JSON.stringify(progressData),
     }),
 
-  // Leaderboard endpoints
-  getLeaderboard: (params: Record<string, string> = {}) => {
-    const queryParams = new URLSearchParams(params)
-    return makeRequest(`/api/leaderboard?${queryParams}`)
-  },
+  // User progress endpoints
+  getUserProgress: () => makeRequest("/api/user/progress"),
 
-  // Tournament endpoints
-  getTournaments: () => makeRequest("/api/tournaments"),
-
-  // Achievement endpoints
-  getAchievements: () => makeRequest("/api/achievements"),
+  // Dashboard endpoints
+  getDashboardStats: () => makeRequest("/api/dashboard/stats"),
 
   // Utility endpoints
   healthCheck: () => makeRequest("/api/health"),
-  seedProblems: () => makeRequest("/api/seed-problems", { method: "POST" }),
+  seedTricks: () => makeRequest("/api/seed-tricks", { method: "POST" }),
 }
 
 export default api

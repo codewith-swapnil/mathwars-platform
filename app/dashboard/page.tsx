@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -16,97 +16,118 @@ import {
   Clock,
   Star,
   FlameIcon as Fire,
-  CheckCircle,
-  Lock,
   Trophy,
   Brain,
+  Loader2,
 } from "lucide-react"
 import Link from "next/link"
+import { DashboardInit } from "@/components/dashboard-init"
+import { api } from "@/lib/api"
+
+interface UserStats {
+  level: number
+  xp: number
+  xpToNext: number
+  streak: number
+  tricksLearned: number
+  examTarget: string
+}
+
+interface TodaysTrick {
+  _id: string
+  title: string
+  category: string
+  difficulty: string
+  timeToLearn: string
+  rating: number
+}
+
+interface ExamProgress {
+  name: string
+  progress: number
+  learned: number
+  total: number
+  color: string
+}
+
+interface UpcomingExam {
+  name: string
+  date: string
+  daysLeft: number
+  registered: boolean
+}
 
 export default function DashboardPage() {
-  const [user] = useState({
-    name: "Rajesh Kumar",
-    level: 8,
-    xp: 1250,
-    xpToNext: 1500,
-    streak: 12,
-    tricksLearned: 45,
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [userStats, setUserStats] = useState<UserStats>({
+    level: 1,
+    xp: 0,
+    xpToNext: 1000,
+    streak: 0,
+    tricksLearned: 0,
     examTarget: "SSC CGL 2024",
-    accuracy: 89,
   })
+  const [todaysTricks, setTodaysTricks] = useState<TodaysTrick[]>([])
+  const [examProgress, setExamProgress] = useState<ExamProgress[]>([])
+  const [upcomingExams, setUpcomingExams] = useState<UpcomingExam[]>([])
+  const [userProgress, setUserProgress] = useState<any>(null)
 
-  const examCategories = [
-    { name: "SSC", progress: 65, total: 120, learned: 78, color: "bg-green-500" },
-    { name: "Banking", progress: 40, total: 95, learned: 38, color: "bg-blue-500" },
-    { name: "Railway", progress: 25, total: 80, learned: 20, color: "bg-purple-500" },
-    { name: "Others", progress: 15, total: 60, learned: 9, color: "bg-orange-500" },
-  ]
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
 
-  const recentTricks = [
-    {
-      id: 1,
-      title: "Square of Numbers ending in 5",
-      category: "Speed Arithmetic",
-      difficulty: "Easy",
-      timeToLearn: "3 min",
-      completed: true,
-      rating: 4.8,
-    },
-    {
-      id: 2,
-      title: "Percentage to Fraction Conversion",
-      category: "Percentage",
-      difficulty: "Medium",
-      timeToLearn: "5 min",
-      completed: true,
-      rating: 4.9,
-    },
-    {
-      id: 3,
-      title: "Quick Division by 11",
-      category: "Number System",
-      difficulty: "Easy",
-      timeToLearn: "4 min",
-      completed: false,
-      rating: 4.7,
-    },
-  ]
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
 
-  const todaysTricks = [
-    {
-      id: 1,
-      title: "Multiplication by 11 Trick",
-      category: "Speed Arithmetic",
-      difficulty: "Easy",
-      xp: 50,
-      completed: false,
-      estimatedTime: "3 min",
-    },
-    {
-      id: 2,
-      title: "Compound Interest Shortcut",
-      category: "Banking Math",
-      difficulty: "Medium",
-      xp: 75,
-      completed: true,
-      estimatedTime: "6 min",
-    },
-    {
-      id: 3,
-      title: "Time & Work Formula",
-      category: "Arithmetic",
-      difficulty: "Hard",
-      xp: 100,
-      completed: false,
-      estimatedTime: "8 min",
-    },
-  ]
+      // Load dashboard stats and user progress in parallel
+      const [dashboardData, progressData] = await Promise.all([
+        api.getDashboardStats(),
+        api
+          .getUserProgress()
+          .catch(() => null), // Don't fail if user progress doesn't exist
+      ])
 
-  const upcomingExams = [
-    { name: "SSC CGL Tier 1", date: "March 15, 2024", daysLeft: 45, registered: true },
-    { name: "IBPS PO Prelims", date: "April 20, 2024", daysLeft: 81, registered: false },
-    { name: "RRB NTPC", date: "May 10, 2024", daysLeft: 101, registered: true },
-  ]
+      setUserStats(dashboardData.userStats)
+      setTodaysTricks(dashboardData.todaysTricks || [])
+      setExamProgress(dashboardData.examProgress || [])
+      setUpcomingExams(dashboardData.upcomingExams || [])
+      setUserProgress(progressData)
+    } catch (error) {
+      console.error("Error loading dashboard data:", error)
+      setError("Failed to load dashboard data. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "Easy":
+        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+      case "Medium":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+      case "Hard":
+        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
@@ -142,12 +163,12 @@ export default function DashboardPage() {
               <div className="flex items-center space-x-2 bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/20 dark:to-red-900/20 px-3 py-1 rounded-full">
                 <Fire className="h-4 w-4 text-orange-600" />
                 <span className="text-sm font-medium text-orange-800 dark:text-orange-200">
-                  {user.streak} day streak
+                  {userStats.streak} day streak
                 </span>
               </div>
               <Avatar>
                 <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                <AvatarFallback>RK</AvatarFallback>
+                <AvatarFallback>U</AvatarFallback>
               </Avatar>
             </div>
           </div>
@@ -157,11 +178,26 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome back, {user.name}! 🎯</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome back! 🎯</h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Ready to learn some amazing math tricks today? Target: {user.examTarget}
+            Ready to learn some amazing math tricks today? Target: {userStats.examTarget}
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <Card className="mb-8 border-red-200 bg-red-50 dark:bg-red-900/20">
+            <CardContent className="p-4">
+              <p className="text-red-700 dark:text-red-300">{error}</p>
+              <Button onClick={loadDashboardData} className="mt-2" size="sm">
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Dashboard Initialization */}
+        <DashboardInit />
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -170,17 +206,15 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Level</p>
-                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{user.level}</p>
+                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{userStats.level}</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
                   <Star className="h-6 w-6 text-white" />
                 </div>
               </div>
               <div className="mt-4">
-                <Progress value={(user.xp / user.xpToNext) * 100} className="h-2" />
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                  {user.xp}/{user.xpToNext} XP to next level
-                </p>
+                <Progress value={(userStats.xp / (userStats.xp + userStats.xpToNext)) * 100} className="h-2" />
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">{userStats.xpToNext} XP to next level</p>
               </div>
             </CardContent>
           </Card>
@@ -190,7 +224,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-green-600 dark:text-green-400">Tricks Learned</p>
-                  <p className="text-2xl font-bold text-green-900 dark:text-green-100">{user.tricksLearned}</p>
+                  <p className="text-2xl font-bold text-green-900 dark:text-green-100">{userStats.tricksLearned}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
                   <Brain className="h-6 w-6 text-white" />
@@ -198,7 +232,7 @@ export default function DashboardPage() {
               </div>
               <div className="mt-4 flex items-center">
                 <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-                <p className="text-xs text-green-600 dark:text-green-400">+5 this week</p>
+                <p className="text-xs text-green-600 dark:text-green-400">Keep learning!</p>
               </div>
             </CardContent>
           </Card>
@@ -208,14 +242,16 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Accuracy</p>
-                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{user.accuracy}%</p>
+                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                    {userProgress?.userProgress?.accuracy || 0}%
+                  </p>
                 </div>
                 <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
                   <Target className="h-6 w-6 text-white" />
                 </div>
               </div>
               <div className="mt-4 flex items-center">
-                <p className="text-xs text-purple-600 dark:text-purple-400">Excellent performance!</p>
+                <p className="text-xs text-purple-600 dark:text-purple-400">Practice performance</p>
               </div>
             </CardContent>
           </Card>
@@ -225,7 +261,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Streak</p>
-                  <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{user.streak} days</p>
+                  <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{userStats.streak} days</p>
                 </div>
                 <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center">
                   <Fire className="h-6 w-6 text-white" />
@@ -246,44 +282,44 @@ export default function DashboardPage() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Zap className="mr-2 h-5 w-5 text-yellow-600" />
-                  Today's Math Tricks
+                  Recommended Math Tricks
                 </CardTitle>
                 <CardDescription>Master these tricks to boost your calculation speed</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {todaysTricks.map((trick) => (
-                  <div
-                    key={trick.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-3 h-3 rounded-full ${trick.completed ? "bg-green-500" : "bg-gray-300"}`} />
-                      <div>
-                        <h4 className="font-medium">{trick.title}</h4>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Badge
-                            variant={
-                              trick.difficulty === "Easy"
-                                ? "secondary"
-                                : trick.difficulty === "Medium"
-                                  ? "default"
-                                  : "destructive"
-                            }
-                          >
-                            {trick.difficulty}
-                          </Badge>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">+{trick.xp} XP</span>
-                          <span className="text-sm text-gray-500 dark:text-gray-500">• {trick.estimatedTime}</span>
+                {todaysTricks.length > 0 ? (
+                  todaysTricks.map((trick) => (
+                    <div
+                      key={trick._id}
+                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="w-3 h-3 rounded-full bg-blue-500" />
+                        <div>
+                          <h4 className="font-medium">{trick.title}</h4>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge className={getDifficultyColor(trick.difficulty)}>{trick.difficulty}</Badge>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{trick.category}</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-500">• {trick.timeToLearn}</span>
+                            <div className="flex items-center">
+                              <Star className="h-3 w-3 text-yellow-500 mr-1" />
+                              <span className="text-xs text-gray-500">{trick.rating}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
+                      <Link href={`/tricks/${trick._id}`}>
+                        <Button size="sm">Learn</Button>
+                      </Link>
                     </div>
-                    <Link href={`/tricks/${trick.id}`}>
-                      <Button size="sm" disabled={trick.completed}>
-                        {trick.completed ? "Completed" : "Learn"}
-                      </Button>
-                    </Link>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-400">No tricks available yet.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Load sample tricks to get started!</p>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
 
@@ -297,21 +333,28 @@ export default function DashboardPage() {
                 <CardDescription>Track your progress across different competitive exams</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {examCategories.map((exam, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${exam.color}`} />
-                        <span className="font-medium">{exam.name}</span>
-                        <Badge variant="outline">
-                          {exam.learned}/{exam.total} tricks
-                        </Badge>
+                {examProgress.length > 0 ? (
+                  examProgress.map((exam, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-3 h-3 rounded-full ${exam.color}`} />
+                          <span className="font-medium">{exam.name}</span>
+                          <Badge variant="outline">
+                            {exam.learned}/{exam.total} tricks
+                          </Badge>
+                        </div>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{exam.progress}%</span>
                       </div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">{exam.progress}%</span>
+                      <Progress value={exam.progress} className="h-2" />
                     </div>
-                    <Progress value={exam.progress} className="h-2" />
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-400">No exam progress data available.</p>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           </div>
@@ -344,42 +387,31 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Recent Tricks */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Award className="mr-2 h-5 w-5 text-yellow-600" />
-                  Recently Learned
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recentTricks.map((trick) => (
-                  <div key={trick.id} className="flex items-start space-x-3">
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                        trick.completed ? "bg-green-100" : "bg-gray-100"
-                      }`}
-                    >
-                      {trick.completed ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Lock className="h-4 w-4 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{trick.title}</h4>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{trick.category}</p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {trick.difficulty}
-                        </Badge>
-                        <span className="text-xs text-gray-500">⭐ {trick.rating}</span>
+            {/* Recent Achievements */}
+            {userProgress?.recentAchievements && userProgress.recentAchievements.length > 0 && (
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Award className="mr-2 h-5 w-5 text-yellow-600" />
+                    Recent Achievements
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {userProgress.recentAchievements.map((achievement: any, index: number) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="text-2xl">{achievement.icon}</div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm">{achievement.name}</h4>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{achievement.description}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          {new Date(achievement.earnedAt).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Quick Actions */}
             <Card className="border-0 shadow-lg">
