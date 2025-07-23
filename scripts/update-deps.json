@@ -1,0 +1,8 @@
+{
+  "name": "update-dependencies",
+  "scripts": {
+    "clean": "rm -rf node_modules pnpm-lock.yaml",
+    "fresh-install": "pnpm install",
+    "update": "pnpm clean && pnpm fresh-install"
+  }
+}
