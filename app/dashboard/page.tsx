@@ -6,44 +6,106 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Trophy, Zap, Target, BookOpen, Users, TrendingUp, Award, Clock, Star, FlameIcon as Fire } from "lucide-react"
+import {
+  Calculator,
+  Zap,
+  Target,
+  BookOpen,
+  TrendingUp,
+  Award,
+  Clock,
+  Star,
+  FlameIcon as Fire,
+  CheckCircle,
+  Lock,
+  Trophy,
+  Brain,
+} from "lucide-react"
 import Link from "next/link"
-import { DashboardInit } from "@/components/dashboard-init"
 
 export default function DashboardPage() {
   const [user] = useState({
-    name: "Alex Chen",
-    level: 15,
-    xp: 2450,
-    xpToNext: 3000,
-    streak: 7,
-    rank: 142,
-    totalProblems: 89,
-    correctRate: 87,
+    name: "Rajesh Kumar",
+    level: 8,
+    xp: 1250,
+    xpToNext: 1500,
+    streak: 12,
+    tricksLearned: 45,
+    examTarget: "SSC CGL 2024",
+    accuracy: 89,
   })
 
-  const recentAchievements = [
+  const examCategories = [
+    { name: "SSC", progress: 65, total: 120, learned: 78, color: "bg-green-500" },
+    { name: "Banking", progress: 40, total: 95, learned: 38, color: "bg-blue-500" },
+    { name: "Railway", progress: 25, total: 80, learned: 20, color: "bg-purple-500" },
+    { name: "Others", progress: 15, total: 60, learned: 9, color: "bg-orange-500" },
+  ]
+
+  const recentTricks = [
     {
       id: 1,
-      title: "Speed Demon",
-      description: "Solved 10 problems in under 5 minutes",
-      icon: "⚡",
-      date: "2 days ago",
+      title: "Square of Numbers ending in 5",
+      category: "Speed Arithmetic",
+      difficulty: "Easy",
+      timeToLearn: "3 min",
+      completed: true,
+      rating: 4.8,
     },
-    { id: 2, title: "Algebra Master", description: "Completed Algebra fundamentals", icon: "🎯", date: "1 week ago" },
-    { id: 3, title: "Streak Warrior", description: "7-day solving streak", icon: "🔥", date: "Today" },
+    {
+      id: 2,
+      title: "Percentage to Fraction Conversion",
+      category: "Percentage",
+      difficulty: "Medium",
+      timeToLearn: "5 min",
+      completed: true,
+      rating: 4.9,
+    },
+    {
+      id: 3,
+      title: "Quick Division by 11",
+      category: "Number System",
+      difficulty: "Easy",
+      timeToLearn: "4 min",
+      completed: false,
+      rating: 4.7,
+    },
   ]
 
-  const upcomingTournaments = [
-    { id: 1, name: "Weekly AMC Challenge", participants: 234, startTime: "2 hours", difficulty: "Intermediate" },
-    { id: 2, name: "Geometry Masters", participants: 156, startTime: "1 day", difficulty: "Advanced" },
-    { id: 3, name: "Speed Math Sprint", participants: 89, startTime: "3 days", difficulty: "Beginner" },
+  const todaysTricks = [
+    {
+      id: 1,
+      title: "Multiplication by 11 Trick",
+      category: "Speed Arithmetic",
+      difficulty: "Easy",
+      xp: 50,
+      completed: false,
+      estimatedTime: "3 min",
+    },
+    {
+      id: 2,
+      title: "Compound Interest Shortcut",
+      category: "Banking Math",
+      difficulty: "Medium",
+      xp: 75,
+      completed: true,
+      estimatedTime: "6 min",
+    },
+    {
+      id: 3,
+      title: "Time & Work Formula",
+      category: "Arithmetic",
+      difficulty: "Hard",
+      xp: 100,
+      completed: false,
+      estimatedTime: "8 min",
+    },
   ]
 
-  const dailyChallenges = [
-    { id: 1, title: "Quadratic Equations", difficulty: "Medium", xp: 150, completed: false },
-    { id: 2, title: "Number Theory", difficulty: "Hard", xp: 250, completed: true },
-    { id: 3, title: "Combinatorics", difficulty: "Easy", xp: 100, completed: false },
+  const upcomingExams = [
+    { name: "SSC CGL Tier 1", date: "March 15, 2024", daysLeft: 45, registered: true },
+    { name: "IBPS PO Prelims", date: "April 20, 2024", daysLeft: 81, registered: false },
+    { name: "RRB NTPC", date: "May 10, 2024", daysLeft: 101, registered: true },
   ]
 
   return (
@@ -55,24 +117,24 @@ export default function DashboardPage() {
             <div className="flex items-center space-x-8">
               <Link href="/" className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">M</span>
+                  <Calculator className="text-white h-5 w-5" />
                 </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  MathWars
+                  MathTricks Pro
                 </span>
               </Link>
               <div className="hidden md:flex space-x-6">
                 <Link href="/dashboard" className="text-blue-600 font-medium">
                   Dashboard
                 </Link>
-                <Link href="/problems" className="text-gray-600 hover:text-gray-900">
-                  Problems
+                <Link href="/tricks" className="text-gray-600 hover:text-gray-900">
+                  Learn Tricks
                 </Link>
-                <Link href="/tournaments" className="text-gray-600 hover:text-gray-900">
-                  Tournaments
+                <Link href="/practice" className="text-gray-600 hover:text-gray-900">
+                  Practice
                 </Link>
-                <Link href="/leaderboard" className="text-gray-600 hover:text-gray-900">
-                  Leaderboard
+                <Link href="/exams" className="text-gray-600 hover:text-gray-900">
+                  Mock Tests
                 </Link>
               </div>
             </div>
@@ -85,7 +147,7 @@ export default function DashboardPage() {
               </div>
               <Avatar>
                 <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                <AvatarFallback>AC</AvatarFallback>
+                <AvatarFallback>RK</AvatarFallback>
               </Avatar>
             </div>
           </div>
@@ -95,12 +157,11 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome back, {user.name}! 👋</h1>
-          <p className="text-gray-600 dark:text-gray-300">Ready to tackle some challenging problems today?</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome back, {user.name}! 🎯</h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Ready to learn some amazing math tricks today? Target: {user.examTarget}
+          </p>
         </div>
-
-        {/* Dashboard Initialization */}
-        <DashboardInit />
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -128,16 +189,16 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-600 dark:text-green-400">Global Rank</p>
-                  <p className="text-2xl font-bold text-green-900 dark:text-green-100">#{user.rank}</p>
+                  <p className="text-sm font-medium text-green-600 dark:text-green-400">Tricks Learned</p>
+                  <p className="text-2xl font-bold text-green-900 dark:text-green-100">{user.tricksLearned}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-                  <Trophy className="h-6 w-6 text-white" />
+                  <Brain className="h-6 w-6 text-white" />
                 </div>
               </div>
               <div className="mt-4 flex items-center">
                 <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-                <p className="text-xs text-green-600 dark:text-green-400">+12 this week</p>
+                <p className="text-xs text-green-600 dark:text-green-400">+5 this week</p>
               </div>
             </CardContent>
           </Card>
@@ -146,15 +207,15 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Problems Solved</p>
-                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{user.totalProblems}</p>
+                  <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Accuracy</p>
+                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{user.accuracy}%</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
                   <Target className="h-6 w-6 text-white" />
                 </div>
               </div>
               <div className="mt-4 flex items-center">
-                <p className="text-xs text-purple-600 dark:text-purple-400">{user.correctRate}% accuracy</p>
+                <p className="text-xs text-purple-600 dark:text-purple-400">Excellent performance!</p>
               </div>
             </CardContent>
           </Card>
@@ -180,84 +241,75 @@ export default function DashboardPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Daily Challenges */}
+            {/* Today's Learning */}
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Zap className="mr-2 h-5 w-5 text-yellow-600" />
-                  Daily Challenges
+                  Today's Math Tricks
                 </CardTitle>
-                <CardDescription>Complete these challenges to earn bonus XP</CardDescription>
+                <CardDescription>Master these tricks to boost your calculation speed</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {dailyChallenges.map((challenge) => (
+                {todaysTricks.map((trick) => (
                   <div
-                    key={challenge.id}
+                    key={trick.id}
                     className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
                   >
                     <div className="flex items-center space-x-4">
-                      <div className={`w-3 h-3 rounded-full ${challenge.completed ? "bg-green-500" : "bg-gray-300"}`} />
+                      <div className={`w-3 h-3 rounded-full ${trick.completed ? "bg-green-500" : "bg-gray-300"}`} />
                       <div>
-                        <h4 className="font-medium">{challenge.title}</h4>
+                        <h4 className="font-medium">{trick.title}</h4>
                         <div className="flex items-center space-x-2 mt-1">
                           <Badge
                             variant={
-                              challenge.difficulty === "Easy"
+                              trick.difficulty === "Easy"
                                 ? "secondary"
-                                : challenge.difficulty === "Medium"
+                                : trick.difficulty === "Medium"
                                   ? "default"
                                   : "destructive"
                             }
                           >
-                            {challenge.difficulty}
+                            {trick.difficulty}
                           </Badge>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">+{challenge.xp} XP</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">+{trick.xp} XP</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-500">• {trick.estimatedTime}</span>
                         </div>
                       </div>
                     </div>
-                    <Button size="sm" disabled={challenge.completed}>
-                      {challenge.completed ? "Completed" : "Start"}
-                    </Button>
+                    <Link href={`/tricks/${trick.id}`}>
+                      <Button size="sm" disabled={trick.completed}>
+                        {trick.completed ? "Completed" : "Learn"}
+                      </Button>
+                    </Link>
                   </div>
                 ))}
               </CardContent>
             </Card>
 
-            {/* Upcoming Tournaments */}
+            {/* Exam Progress */}
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Trophy className="mr-2 h-5 w-5 text-yellow-600" />
-                  Upcoming Tournaments
+                  Exam Preparation Progress
                 </CardTitle>
-                <CardDescription>Join live competitions with students worldwide</CardDescription>
+                <CardDescription>Track your progress across different competitive exams</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {upcomingTournaments.map((tournament) => (
-                  <div
-                    key={tournament.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    <div>
-                      <h4 className="font-medium">{tournament.name}</h4>
-                      <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
-                        <div className="flex items-center">
-                          <Users className="mr-1 h-4 w-4" />
-                          {tournament.participants} participants
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="mr-1 h-4 w-4" />
-                          Starts in {tournament.startTime}
-                        </div>
-                        <Badge variant="outline">{tournament.difficulty}</Badge>
+              <CardContent className="space-y-6">
+                {examCategories.map((exam, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${exam.color}`} />
+                        <span className="font-medium">{exam.name}</span>
+                        <Badge variant="outline">
+                          {exam.learned}/{exam.total} tricks
+                        </Badge>
                       </div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{exam.progress}%</span>
                     </div>
-                    <Button
-                      size="sm"
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      Join
-                    </Button>
+                    <Progress value={exam.progress} className="h-2" />
                   </div>
                 ))}
               </CardContent>
@@ -266,22 +318,63 @@ export default function DashboardPage() {
 
           {/* Sidebar */}
           <div className="space-y-8">
-            {/* Recent Achievements */}
+            {/* Upcoming Exams */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Clock className="mr-2 h-5 w-5 text-blue-600" />
+                  Upcoming Exams
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {upcomingExams.map((exam, index) => (
+                  <div key={index} className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-sm">{exam.name}</h4>
+                      {exam.registered ? (
+                        <Badge className="bg-green-100 text-green-800">Registered</Badge>
+                      ) : (
+                        <Badge variant="outline">Not Registered</Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{exam.date}</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{exam.daysLeft} days left</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Recent Tricks */}
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Award className="mr-2 h-5 w-5 text-yellow-600" />
-                  Recent Achievements
+                  Recently Learned
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {recentAchievements.map((achievement) => (
-                  <div key={achievement.id} className="flex items-start space-x-3">
-                    <div className="text-2xl">{achievement.icon}</div>
+                {recentTricks.map((trick) => (
+                  <div key={trick.id} className="flex items-start space-x-3">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        trick.completed ? "bg-green-100" : "bg-gray-100"
+                      }`}
+                    >
+                      {trick.completed ? (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Lock className="h-4 w-4 text-gray-400" />
+                      )}
+                    </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-sm">{achievement.title}</h4>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{achievement.description}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{achievement.date}</p>
+                      <h4 className="font-medium text-sm">{trick.title}</h4>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{trick.category}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {trick.difficulty}
+                        </Badge>
+                        <span className="text-xs text-gray-500">⭐ {trick.rating}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -294,27 +387,27 @@ export default function DashboardPage() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Link href="/problems">
+                <Link href="/tricks">
                   <Button className="w-full justify-start bg-transparent" variant="outline">
                     <BookOpen className="mr-2 h-4 w-4" />
-                    Practice Problems
+                    Browse All Tricks
                   </Button>
                 </Link>
-                <Link href="/tournaments">
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
-                    <Trophy className="mr-2 h-4 w-4" />
-                    Join Tournament
-                  </Button>
-                </Link>
-                <Link href="/leaderboard">
-                  <Button className="w-full justify-start bg-transparent" variant="outline">
-                    <Users className="mr-2 h-4 w-4" />
-                    View Leaderboard
-                  </Button>
-                </Link>
-                <Link href="/profile">
+                <Link href="/practice">
                   <Button className="w-full justify-start bg-transparent" variant="outline">
                     <Target className="mr-2 h-4 w-4" />
+                    Practice Session
+                  </Button>
+                </Link>
+                <Link href="/mock-tests">
+                  <Button className="w-full justify-start bg-transparent" variant="outline">
+                    <Trophy className="mr-2 h-4 w-4" />
+                    Take Mock Test
+                  </Button>
+                </Link>
+                <Link href="/progress">
+                  <Button className="w-full justify-start bg-transparent" variant="outline">
+                    <TrendingUp className="mr-2 h-4 w-4" />
                     View Progress
                   </Button>
                 </Link>
