@@ -2,87 +2,145 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { api } from "@/lib/api"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Loader2, Database, CheckCircle, AlertTriangle } from "lucide-react"
 
-export function DashboardInit() {
+export default function DashboardInit() {
+  const [isLoading, setIsLoading] = useState(true)
   const [isSeeding, setIsSeeding] = useState(false)
-  const [hasTricks, setHasTricks] = useState(true)
+  const [hasData, setHasData] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    checkForTricks()
+    checkDataAndSeed()
   }, [])
 
-  const checkForTricks = async () => {
+  const checkDataAndSeed = async () => {
     try {
-      const response = await api.getTricks({ limit: "1" })
-      setHasTricks(response.tricks && response.tricks.length > 0)
+      setIsLoading(true)
       setError(null)
-    } catch (error) {
-      console.error("Error checking tricks:", error)
-      setHasTricks(false)
-      setError("Failed to check for existing tricks")
+
+      // Check if data exists
+      const response = await fetch("/api/auto-seed")
+      const result = await response.json()
+
+      if (response.ok) {
+        setHasData(true)
+        if (result.seedResult) {
+          // Auto-seeding happened
+          console.log("Auto-seeding completed:", result.seedResult)
+        }
+      } else {
+        setError(result.message || "Failed to check database")
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to initialize database")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const seedTricks = async () => {
-    setIsSeeding(true)
-    setError(null)
+  const manualSeed = async () => {
     try {
-      await api.seedTricks()
-      setHasTricks(true)
-      // Refresh the page to show new tricks
-      window.location.reload()
-    } catch (error) {
-      console.error("Error seeding tricks:", error)
-      setError("Failed to seed tricks. Please try again.")
+      setIsSeeding(true)
+      setError(null)
+
+      const response = await fetch("/api/seed-tricks", {
+        method: "POST",
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setHasData(true)
+        alert("Database seeded successfully! " + result.message)
+      } else {
+        setError(result.message || "Seeding failed")
+      }
+    } catch (err: any) {
+      setError(err.message || "Seeding failed")
     } finally {
       setIsSeeding(false)
     }
   }
 
-  if (hasTricks && !error) {
-    return null // Don't show anything if tricks exist and no error
+  if (isLoading) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardContent className="flex flex-col items-center justify-center p-6">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+          <p className="text-center text-gray-600">Initializing database...</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="w-full max-w-md mx-auto border-red-200">
+        <CardHeader>
+          <CardTitle className="flex items-center text-red-600">
+            <AlertTriangle className="mr-2 h-5 w-5" />
+            Database Error
+          </CardTitle>
+          <CardDescription className="text-red-500">{error}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={manualSeed} disabled={isSeeding} className="w-full">
+            {isSeeding ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Seeding...
+              </>
+            ) : (
+              <>
+                <Database className="mr-2 h-4 w-4" />
+                Retry Seeding
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (hasData) {
+    return (
+      <Card className="w-full max-w-md mx-auto border-green-200">
+        <CardContent className="flex flex-col items-center justify-center p-6">
+          <CheckCircle className="h-8 w-8 text-green-600 mb-4" />
+          <p className="text-center text-green-600 font-medium">Database Ready!</p>
+          <p className="text-center text-gray-600 text-sm mt-2">
+            Your math tricks database is loaded and ready to use.
+          </p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
-    <Card className="mb-8 border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20">
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-yellow-800 dark:text-yellow-200">Welcome to MathTricks Pro! 🧠✨</CardTitle>
+        <CardTitle className="flex items-center">
+          <Database className="mr-2 h-5 w-5" />
+          Setup Required
+        </CardTitle>
+        <CardDescription>Initialize your database with math tricks</CardDescription>
       </CardHeader>
       <CardContent>
-        {error ? (
-          <div className="space-y-4">
-            <p className="text-red-700 dark:text-red-300 mb-4">{error}</p>
-            <Button onClick={checkForTricks} variant="outline" className="mr-4 bg-transparent">
-              Try Again
-            </Button>
-            <Button onClick={seedTricks} disabled={isSeeding} className="bg-yellow-600 hover:bg-yellow-700 text-white">
-              {isSeeding ? "Loading Tricks..." : "Load Sample Tricks"}
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-yellow-700 dark:text-yellow-300 mb-4">
-              It looks like this is a fresh installation. Would you like to load some sample math tricks to get started?
-              These include shortcuts for SSC, Banking, Railway, and other competitive exams.
-            </p>
-            <div className="bg-yellow-100 dark:bg-yellow-800/20 p-4 rounded-lg mb-4">
-              <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Sample tricks include:</h4>
-              <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-                <li>• Square of numbers ending in 5</li>
-                <li>• Multiplication by 11 trick</li>
-                <li>• Percentage to fraction conversions</li>
-                <li>• Time and work shortcuts</li>
-                <li>• Banking math formulas</li>
-              </ul>
-            </div>
-            <Button onClick={seedTricks} disabled={isSeeding} className="bg-yellow-600 hover:bg-yellow-700 text-white">
-              {isSeeding ? "Loading Tricks..." : "Load Sample Tricks"}
-            </Button>
-          </div>
-        )}
+        <Button onClick={manualSeed} disabled={isSeeding} className="w-full">
+          {isSeeding ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Seeding Database...
+            </>
+          ) : (
+            <>
+              <Database className="mr-2 h-4 w-4" />
+              Load Sample Tricks
+            </>
+          )}
+        </Button>
       </CardContent>
     </Card>
   )
