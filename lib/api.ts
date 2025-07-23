@@ -1,6 +1,7 @@
-const API_BASE_URL = process.env.NODE_ENV === "production" ? "https://your-app-name.vercel.app/api" : "/api"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || ""
 
 interface ApiResponse<T> {
+  success: boolean
   data?: T
   message?: string
   error?: string
@@ -11,59 +12,86 @@ interface Trick {
   title: string
   description: string
   category: string
+  examTypes: string[]
   difficulty: string
-  timeToLearn: string
-  examRelevance: string[]
+  timeToLearn: number
+  xpReward: number
   steps: Array<{
     title: string
-    content: string
+    description: string
     example?: string
-    visual?: string
+    formula?: string
   }>
-  keyPoints: string[]
-  tips: string[]
+  visualExample: {
+    problem: string
+    solution: string
+    visualization: string
+  }
   practiceQuestions: Array<{
     question: string
-    answer: string
-    explanation?: string
+    options: string[]
+    correctAnswer: string
+    explanation: string
+    timeLimit: number
   }>
   examApplications: Array<{
-    exam: string
-    usage: string
-    timesSaved?: string
+    examType: string
+    scenario: string
+    timeSaved: string
+    frequency: string
   }>
-  rating: number
-  studentsLearned: number
   tags: string[]
   createdAt: string
-  updatedAt: string
+  completionCount: number
 }
 
 interface UserProgress {
   _id: string
   userId: string
   level: number
-  xp: number
-  streak: number
-  tricksCompleted: string[]
+  totalXP: number
+  currentXP: number
+  xpToNextLevel: number
+  tricksCompleted: number
+  totalTimeSpent: number
+  averageScore: number
+  currentStreak: number
+  bestStreak: number
+  lastActivityDate: string
   categoryProgress: Array<{
     category: string
-    tricksLearned: number
+    tricksCompleted: number
     totalTricks: number
+    averageScore: number
+    timeSpent: number
   }>
+  examReadiness: {
+    SSC: number
+    Banking: number
+    Railway: number
+    Insurance: number
+    Other: number
+  }
+  targetExams: string[]
+}
+
+interface DashboardStats {
+  userProgress: UserProgress
+  recentTricks: Trick[]
+  recommendations: Trick[]
   achievements: Array<{
+    _id: string
     name: string
     description: string
     icon: string
-    earnedAt: string
+    unlockedAt?: string
+    isCompleted: boolean
   }>
-  accuracy: number
-  examTarget: string
 }
 
 class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`
+    const url = `${API_BASE}${endpoint}`
 
     const config: RequestInit = {
       headers: {
@@ -73,160 +101,137 @@ class ApiClient {
       ...options,
     }
 
+    // Add auth token if available
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token")
+      if (token) {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        }
+      }
+    }
+
     try {
       const response = await fetch(url, config)
+      const data = await response.json()
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        throw new Error(data.message || `HTTP error! status: ${response.status}`)
       }
 
-      return await response.json()
+      return data
     } catch (error) {
       console.error(`API request failed: ${endpoint}`, error)
       throw error
     }
   }
 
-  // Tricks API
-  async getTricks(
-    params: {
-      category?: string
-      difficulty?: string
-      examRelevance?: string
-      limit?: string
-      page?: string
-    } = {},
-  ): Promise<{
-    tricks: Trick[]
-    pagination: {
-      page: number
-      limit: number
-      total: number
-      pages: number
-    }
-  }> {
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) queryParams.append(key, value)
-    })
-
-    const queryString = queryParams.toString()
-    return this.request(`/tricks${queryString ? `?${queryString}` : ""}`)
-  }
-
-  async getTrick(id: string): Promise<Trick> {
-    return this.request(`/tricks/${id}`)
-  }
-
-  async completeTrick(
-    id: string,
-    data: {
-      userId: string
-      practiceScore?: number
-    },
-  ): Promise<{
-    message: string
-    xpEarned: number
-    newLevel: number
-    userProgress: UserProgress
-  }> {
-    return this.request(`/tricks/${id}/complete`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  }
-
-  // User Progress API
-  async getUserProgress(userId = "default"): Promise<{
-    userProgress: UserProgress
-    recentAchievements: Array<{
-      name: string
-      description: string
-      icon: string
-      earnedAt: string
-    }>
-  }> {
-    return this.request(`/user/progress?userId=${userId}`)
-  }
-
-  // Dashboard API
-  async getDashboardStats(userId = "default"): Promise<{
-    userStats: {
-      level: number
-      xp: number
-      xpToNext: number
-      streak: number
-      tricksLearned: number
-      examTarget: string
-    }
-    todaysTricks: Trick[]
-    examProgress: Array<{
-      name: string
-      progress: number
-      learned: number
-      total: number
-      color: string
-    }>
-    upcomingExams: Array<{
-      name: string
-      date: string
-      daysLeft: number
-      registered: boolean
-    }>
-  }> {
-    return this.request(`/dashboard/stats?userId=${userId}`)
-  }
-
-  // Seeding API
-  async seedTricks(): Promise<{
-    message: string
-    count: number
-    tricks: Array<{
-      title: string
-      category: string
-      difficulty: string
-    }>
-  }> {
-    return this.request("/seed-tricks", {
-      method: "POST",
-    })
-  }
-
-  // Auth API (for future use)
-  async login(credentials: {
-    email: string
-    password: string
-  }): Promise<{
-    user: any
-    token: string
-  }> {
-    return this.request("/auth/login", {
+  // Auth methods
+  async login(credentials: { email: string; password: string }) {
+    return this.request<{ token: string; user: any }>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify(credentials),
     })
   }
 
-  async register(userData: {
-    username: string
-    email: string
-    password: string
-    fullName: string
-  }): Promise<{
-    user: any
-    token: string
-  }> {
-    return this.request("/auth/register", {
+  async register(userData: { username: string; email: string; password: string }) {
+    return this.request<{ token: string; user: any }>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify(userData),
     })
   }
 
+  async getProfile() {
+    return this.request<{ user: any }>("/api/auth/me")
+  }
+
+  // Tricks methods
+  async getTricks(
+    params: {
+      category?: string
+      difficulty?: string
+      examType?: string
+      limit?: string
+      page?: string
+    } = {},
+  ) {
+    const searchParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) searchParams.append(key, value)
+    })
+
+    const queryString = searchParams.toString()
+    return this.request<{ tricks: Trick[]; total: number; page: number; totalPages: number }>(
+      `/api/tricks${queryString ? `?${queryString}` : ""}`,
+    )
+  }
+
+  async getTrick(id: string) {
+    return this.request<{ trick: Trick }>(`/api/tricks/${id}`)
+  }
+
+  async completeTrick(id: string, data: { timeSpent: number; score?: number }) {
+    return this.request<{ success: boolean; xpGained: number; levelUp?: boolean }>(`/api/tricks/${id}/complete`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  // User Progress methods
+  async getUserProgress() {
+    return this.request<{ progress: UserProgress }>("/api/user/progress")
+  }
+
+  async updateUserProgress(data: Partial<UserProgress>) {
+    return this.request<{ progress: UserProgress }>("/api/user/progress", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  // Dashboard methods
+  async getDashboardStats() {
+    return this.request<DashboardStats>("/api/dashboard/stats")
+  }
+
+  // Seeding methods
+  async seedTricks() {
+    return this.request<{ success: boolean; message: string }>("/api/seed-tricks", {
+      method: "POST",
+    })
+  }
+
+  async autoSeed() {
+    return this.request<{ success: boolean; message: string; seedResult?: any }>("/api/auto-seed")
+  }
+
   // Health check
-  async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    return this.request("/health")
+  async healthCheck() {
+    return this.request<{
+      status: string
+      database: string
+      collections: Record<string, number>
+      environment: Record<string, any>
+    }>("/api/health")
+  }
+
+  // Leaderboard methods
+  async getLeaderboard(params: { type?: string; limit?: string } = {}) {
+    const searchParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) searchParams.append(key, value)
+    })
+
+    const queryString = searchParams.toString()
+    return this.request<{ leaderboard: any[] }>(`/api/leaderboard${queryString ? `?${queryString}` : ""}`)
+  }
+
+  // Achievements methods
+  async getAchievements() {
+    return this.request<{ achievements: any[] }>("/api/achievements")
   }
 }
 
 export const api = new ApiClient()
-export type { Trick, UserProgress }
+export type { Trick, UserProgress, DashboardStats }
