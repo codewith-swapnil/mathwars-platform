@@ -1,13 +1,8 @@
 // MongoDB script to insert achievements data
-// Run this in MongoDB Compass or MongoDB Shell
+// Run this in MongoDB Compass Shell or MongoDB Shell (mongosh)
 
-// Import necessary modules
-const { ObjectId } = require("mongodb")
-const use = require("use") // Placeholder for use function, as it's not a standard JavaScript function
-const db = require("db") // Placeholder for db object, as it's not a standard JavaScript object
-
-// Switch to your database
-use("mathwars") // Replace 'mathwars' with your actual database name
+// Declare the db variable
+const db = db.getSiblingDB("your_database_name") // Replace 'your_database_name' with your actual database name
 
 // Clear existing achievements
 db.achievements.deleteMany({})
@@ -15,7 +10,6 @@ db.achievements.deleteMany({})
 // Insert achievement definitions
 db.achievements.insertMany([
   {
-    _id: ObjectId(),
     name: "first_trick",
     title: "First Steps",
     description: "Complete your first math trick",
@@ -30,7 +24,6 @@ db.achievements.insertMany([
     updatedAt: new Date(),
   },
   {
-    _id: ObjectId(),
     name: "speed_learner",
     title: "Speed Learner",
     description: "Complete 5 tricks in one day",
@@ -45,7 +38,6 @@ db.achievements.insertMany([
     updatedAt: new Date(),
   },
   {
-    _id: ObjectId(),
     name: "consistent_learner",
     title: "Consistent Learner",
     description: "Maintain a 7-day learning streak",
@@ -60,7 +52,6 @@ db.achievements.insertMany([
     updatedAt: new Date(),
   },
   {
-    _id: ObjectId(),
     name: "math_master",
     title: "Math Master",
     description: "Complete all tricks in a category",
@@ -75,7 +66,6 @@ db.achievements.insertMany([
     updatedAt: new Date(),
   },
   {
-    _id: ObjectId(),
     name: "perfect_score",
     title: "Perfect Score",
     description: "Get 100% on 3 practice sessions",
@@ -89,6 +79,21 @@ db.achievements.insertMany([
     createdAt: new Date(),
     updatedAt: new Date(),
   },
+  {
+    name: "quick_learner",
+    title: "Quick Learner",
+    description: "Complete a trick in under 2 minutes",
+    icon: "⚡",
+    xpReward: 150,
+    category: "speed",
+    requirement: {
+      type: "fast_completion",
+      timeLimit: 120, // 2 minutes in seconds
+    },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
 ])
 
 print("Achievements inserted successfully!")
+print("Total achievements: " + db.achievements.countDocuments())

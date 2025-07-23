@@ -1,19 +1,14 @@
 // MongoDB script to insert users directly
-// Run this in MongoDB Compass or MongoDB Shell
+// Run this in MongoDB Compass Shell or MongoDB Shell (mongosh)
 
-// Import necessary modules
-const { ObjectId } = require("mongodb")
-const use = require("use")
+// Declare the db variable
+const db = db.getSiblingDB("yourDatabaseName") // Replace 'yourDatabaseName' with your actual database name
 
-// Switch to your database
-use("mathwars") // Replace 'mathwars' with your actual database name
-
-// Declare db variable
-const db = require("db")
+// Clear existing users except system
+db.users.deleteMany({ username: { $ne: "system" } })
 
 // Insert a system user first
 db.users.insertOne({
-  _id: ObjectId(),
   username: "system",
   email: "system@mathtricks.com",
   password: "$2b$10$rQZ8kqVZ8qVZ8qVZ8qVZ8O", // This is a hashed password for "systempassword123"
@@ -32,7 +27,6 @@ db.users.insertOne({
 // Insert sample users
 db.users.insertMany([
   {
-    _id: ObjectId(),
     username: "testuser1",
     email: "test1@example.com",
     password: "$2b$10$rQZ8kqVZ8qVZ8qVZ8qVZ8O", // password: "password123"
@@ -48,7 +42,6 @@ db.users.insertMany([
     updatedAt: new Date(),
   },
   {
-    _id: ObjectId(),
     username: "testuser2",
     email: "test2@example.com",
     password: "$2b$10$rQZ8kqVZ8qVZ8qVZ8qVZ8O", // password: "password123"
@@ -66,3 +59,4 @@ db.users.insertMany([
 ])
 
 print("Users inserted successfully!")
+print("Total users: " + db.users.countDocuments())

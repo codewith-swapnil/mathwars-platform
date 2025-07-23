@@ -29,7 +29,6 @@
     "clsx": "^2.1.1",
     "compression": "latest",
     "cors": "latest",
-    "db": "latest",
     "dotenv": "latest",
     "express": "latest",
     "express-rate-limit": "latest",
@@ -55,8 +54,7 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss": "3.4.17",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "5.8.3",
-    "use": "latest"
+    "typescript": "5.8.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "2.4.6",

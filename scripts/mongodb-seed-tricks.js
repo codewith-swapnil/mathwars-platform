@@ -1,15 +1,15 @@
 // MongoDB script to insert math tricks directly
-// Run this in MongoDB Compass or MongoDB Shell
+// Run this in MongoDB Compass Shell or MongoDB Shell (mongosh)
 
-// Import necessary modules
-const { use, db, ObjectId } = require("mongodb")
+// Import ObjectId from the MongoDB package
+const { ObjectId } = require("mongodb")
 
-// Switch to your database
-use("mathwars") // Replace 'mathwars' with your actual database name
+// Declare the db variable (assuming it's already defined in the environment)
+const db = global.db
 
-// Get the system user ID (you'll need to replace this with actual ObjectId after running user script)
+// Get the system user ID
 const systemUser = db.users.findOne({ username: "system" })
-const systemUserId = systemUser ? systemUser._id : ObjectId()
+const systemUserId = systemUser ? systemUser._id : new ObjectId()
 
 // Clear existing tricks
 db.tricks.deleteMany({})
@@ -17,7 +17,6 @@ db.tricks.deleteMany({})
 // Insert comprehensive math tricks
 db.tricks.insertMany([
   {
-    _id: ObjectId(),
     title: "Square of Numbers ending in 5",
     description: "Learn to calculate squares of numbers ending in 5 in seconds",
     category: "Speed Arithmetic",
@@ -98,7 +97,6 @@ db.tricks.insertMany([
     updatedAt: new Date(),
   },
   {
-    _id: ObjectId(),
     title: "Multiplication by 11 Trick",
     description: "Multiply any number by 11 using this amazing shortcut",
     category: "Speed Arithmetic",
@@ -173,7 +171,6 @@ db.tricks.insertMany([
     updatedAt: new Date(),
   },
   {
-    _id: ObjectId(),
     title: "Percentage to Fraction Quick Conversion",
     description: "Convert percentages to fractions instantly without calculation",
     category: "Percentage",
@@ -248,7 +245,6 @@ db.tricks.insertMany([
     updatedAt: new Date(),
   },
   {
-    _id: ObjectId(),
     title: "Compound Interest Formula Shortcut",
     description: "Calculate compound interest without complex formulas",
     category: "Banking Math",
@@ -309,7 +305,6 @@ db.tricks.insertMany([
     updatedAt: new Date(),
   },
   {
-    _id: ObjectId(),
     title: "Time and Work Unitary Method",
     description: "Solve time and work problems in 30 seconds",
     category: "Time & Work",
@@ -370,7 +365,6 @@ db.tricks.insertMany([
     updatedAt: new Date(),
   },
   {
-    _id: ObjectId(),
     title: "Profit Loss Percentage Tricks",
     description: "Calculate profit/loss percentages without formulas",
     category: "Profit & Loss",
@@ -437,4 +431,4 @@ db.tricks.insertMany([
 ])
 
 print("Math tricks inserted successfully!")
-print("Total tricks inserted: 6")
+print("Total tricks inserted: " + db.tricks.countDocuments())
